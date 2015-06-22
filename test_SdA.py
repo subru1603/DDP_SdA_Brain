@@ -1,5 +1,7 @@
 from load_data import *
 from SdA import *
+import getopt
+import cPickle
 
 def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
              pretrain_lr=0.001, training_epochs=5, 
@@ -28,6 +30,29 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
     :param dataset: path the the pickled dataset
 
     """
+    #########################################################
+     resumeTraining = False
+     opts, arg = getopt.getopt(sys.argv[1:],"rp:")
+     for opt, arg in opts:
+         if opt == '-r':
+             resumeTraining = True                               # make this true to resume training from saved model    
+         elif opt == '-p':
+             prefix = arg
+            
+    # if(resumeTraining):
+    #     savedModel = file(prefix+'best_valid_momentum.pkl','rb')
+    #     genVariables = cPickle.load(savedModel)
+    #     print genVariables
+    #     (epoch,best_validation_loss,learning_rate,patience,itr) = genVariables
+    #     W = cPickle.load(savedModel)
+    #     b= cPickle.load(savedModel)
+    #     b_prime= cPickle.load(savedModel)
+    # else:
+    #     epoch,best_validation_loss,learning_rate,patience,itr = [0,numpy.inf,learning_rate,100,0]
+    #     W = None
+    #     b = None
+    #     b_prime= None       
+    ##############################
 
     datasets = load_data('Training_patches.npy','training_reshape.npy','Test_patches.npy','test_reshape.npy')
 
@@ -58,23 +83,43 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
     print '... getting the pretraining functions'
     pretraining_fns = sda.pretraining_functions(train_set_x=train_set_x,
                                                 batch_size=batch_size)
+    print 'Length of pretraining function: ', len(pretraining_fns)
 
     print '... pre-training the model'
     start_time = time.clock()
     ## Pre-train layer-wise
     corruption_levels = [.1, .2, .3]
     for i in xrange(sda.n_layers):
+        #print i
         # go through pretraining epochs
         for epoch in xrange(pretraining_epochs):
             # go through the training set
             c = []
             for batch_index in xrange(n_train_batches):
+                #sprint batch_index
                 c.append(pretraining_fns[i](index=batch_index,
                          corruption=corruption_levels[i],
                          lr=pretrain_lr))
             print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
             print numpy.mean(c)
 
+            flag = open('flag.pkl','wb')
+            cPickle.dump(1,flag, protocol = cPickle.HIGHEST_PROTOCOL)
+            flag.close()
+
+            save_valid = open('pre_training.pkl', 'wb')
+            #print 'YO! i=',i,' epoch=',epoch,' cost=',numpy.mean(c) 
+            #print pretrain_lr
+            genVariables = [i, epoch, numpy.mean(c), pretrain_lr]
+            cPickle.dump(genVariables,save_valid,protocol = cPickle.HIGHEST_PROTOCOL)
+            for j in xrange(len(sda.params)):
+                cPickle.dump(sda.params[j].get_value(borrow=True), save_valid, protocol = cPickle.HIGHEST_PROTOCOL)
+            save_valid.close()
+
+
+
+
+    #print sda.params[0]
     end_time = time.clock()
 
     print >> sys.stderr, ('The pretraining code for file ' +
@@ -108,6 +153,10 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
 
     done_looping = False
     epoch = 0
+    flag = open('flag.pkl','wb')
+    cPickle.dump(2,flag, protocol = cPickle.HIGHEST_PROTOCOL)
+    flag.close()
+    log_valid_cost=[]
 
     while (epoch < training_epochs) and (not done_looping):
         epoch = epoch + 1
@@ -121,6 +170,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
                 print('epoch %i, minibatch %i/%i, validation error %f %%' %
                       (epoch, minibatch_index + 1, n_train_batches,
                        this_validation_loss * 100.))
+                log_valid_cost.append(this_validation_loss)
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
@@ -135,6 +185,20 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
                     # save best validation score and iteration number
                     best_validation_loss = this_validation_loss
                     best_iter = iter
+                    print 'Saving the best validation network'
+                    genVariables = [epoch,best_validation_loss,finetune_lr,patience,iter]
+                    save_file = open('fine_tuning.pkl','wb')
+                    cPickle.dump(genVariables, save_file)
+                    for j in xrange(len(sda.params)):
+                        cPickle.dump(sda.params[j].get_value(borrow=True), save_file, protocol = cPickle.HIGHEST_PROTOCOL)
+                    save_file.close()
+                    valid_file = open('log_valid_cost.txt', "a")
+                    for l in log_valid_cost:
+                        valid_file.write("%f\n"%l)
+                    log_valid_cost=[]
+
+
+
 
                     # test it on the test set
                     test_losses = test_model()
