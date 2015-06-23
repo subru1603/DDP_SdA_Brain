@@ -2,9 +2,15 @@ from load_data import *
 from SdA import *
 import getopt
 import cPickle
+from utils import tile_raster_images
+import numpy as np
+try:
+    import PIL.Image as Image
+except ImportError:
+    import Image
 
-def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
-             pretrain_lr=0.001, training_epochs=50, 
+def test_SdA(finetune_lr=0.1, pretraining_epochs=100,
+             pretrain_lr=0.001, training_epochs=150, 
              patch_filename = 'Training_patches.npy', groundtruth_filename = 'training_reshape.npy',
              test_filename = 'Test_patches.npy', testtruth_filename = 'test_reshape.npy', 
              batch_size=100, n_ins = 22*22, n_outs = 5, hidden_layers_sizes = [1000,1000,1000] ):
@@ -43,6 +49,9 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
     #########################################################
     prefix = 'SdA'
     resumeTraining = False
+    
+    #@@@@@@@@ Needs to be worked on @@@@@@@@@@@@@@@@@
+    # Snippet to resume training if the program crashes halfway through #
     opts, arg = getopt.getopt(sys.argv[1:],"rp:")
     for opt, arg in opts:
         if opt == '-r':
@@ -100,7 +109,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
     print 'Pretraining epochs: ', pretraining_epochs
     print 'Finetuning epochs: ', training_epochs
     print '###########################'
-                
+
+                    
     datasets = load_data(patch_filename,groundtruth_filename, test_filename, testtruth_filename)
 
     train_set_x, train_set_y = datasets[0]
@@ -149,7 +159,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
         print '... pre-training the model'
         start_time = time.clock()
         ## Pre-train layer-wise
-        corruption_levels = [.1, .2, .3]
+        corruption_levels = [.5, .6, .7]
         for i in xrange(sda.n_layers):
         
             if i < layer_number:
@@ -306,6 +316,50 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
     print >> sys.stderr, ('The training code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          
+    
+    print sda.params
+    
+    image = Image.fromarray(
+        tile_raster_images(X=(sda.params[0]).get_value(borrow=True).T,
+                           img_shape=(22, 22), tile_shape=(10,10),
+                           tile_spacing=(1, 1)))
+    image.save('filters1.png')
+    
+#    print 'Testing.....'
+#    
+#    test_data = np.load('Test_patches.npy')
+#    test_data = test_data[1]
+#    #print test_input
+#    
+##    layer1 = T.nnet.sigmoid(T.dot(test_input, sda.params[0].get_value(borrow=True).T) + sda.params[1].get_value(borrow=True).T)
+##    layer2 = T.nnet.sigmoid(T.dot(layer1,sda.params[2]) + sda.params[3])
+##    layer3 = T.nnet.sigmoid(T.dot(layer2,sda.params[4]) + sda.params[5])
+##    layer4 = T.nnet.softmax(T.dot(layer3,sda.params[6]) + sda.params[7])
+##    
+##    pred = T.argmax(layer4, axis = 1)
+#    param1 = sda.params[0].get_value(borrow=True)
+#    print '###################'
+#    print param1
+#    param2 = sda.params[1].get_value(borrow=True)
+#    print '###################'
+#    print param1
+#    print '###################'
+#    input_patch = T.vector('input_patch')
+#    params1 = T.matrix('params1')
+#    params2 = T.vector('params2')
+#    layer1 = T.nnet.sigmoid(T.dot(input_patch, params1)+params2)
+##    layer2 = T.nnet.sigmoid(T.dot(layer1, params[2])+params[3])
+##    layer3 = T.nnet.sigmoid(T.dot(layer2, params[4])+params[5])
+##    layer4 = T.nnet.softmax(T.dot(layer3, params[6])+params[7])
+#    
+#    #pred = T.argmax(layer4,axis=1)
+#
+#    answer = theano.function(inputs=[input_patch, params1, params2], outputs=layer1, allow_input_downcast = True)
+#    print answer(test_data,param1, param2)
+#    
+#    print 'Testing done! Predicted class: '
+    
 
 
 if __name__ == '__main__':
