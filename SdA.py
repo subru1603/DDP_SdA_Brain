@@ -63,6 +63,8 @@ class SdA(object):
         n_ins=784,
         hidden_layers_sizes=[500, 500],
         n_outs=10,
+        W = None,
+        b = None,
         corruption_levels=[0.1, 0.1]
     ):
         """ This class is made to support a variable number of layers.
@@ -116,6 +118,10 @@ class SdA(object):
         # stochastich gradient descent on the MLP
 
         # start-snippet-2
+
+        W_temp = []
+        b_temp = []
+
         for i in xrange(self.n_layers):
             # construct the sigmoidal layer
 
@@ -133,12 +139,24 @@ class SdA(object):
                 layer_input = self.x
             else:
                 layer_input = self.sigmoid_layers[-1].output
+                
+            if W is not None:
+                W_temp.append(W[i])
+                b_temp.append(b[i])
+                
+            else:
+                W_temp.append(None)
+                b_temp.append(None)
 
             sigmoid_layer = HiddenLayer(rng=numpy_rng,
                                         input=layer_input,
                                         n_in=input_size,
                                         n_out=hidden_layers_sizes[i],
+                                        W = W_temp[i],
+                                        b = b_temp[i],
                                         activation=T.nnet.sigmoid)
+                                        
+            print 'Hidden Layer created'
             # add the layer to our list of layers
             self.sigmoid_layers.append(sigmoid_layer)
             # its arguably a philosophical question...
@@ -147,6 +165,8 @@ class SdA(object):
             # the visible biases in the dA are parameters of those
             # dA, but not the SdA
             self.params.extend(sigmoid_layer.params)
+            
+            print 'W: ', (sigmoid_layer.W).shape
 
             # Construct a denoising autoencoder that shared weights with this
             # layer
@@ -158,6 +178,8 @@ class SdA(object):
                           W=sigmoid_layer.W,
                           bhid=sigmoid_layer.b)
             self.dA_layers.append(dA_layer)
+            
+            print 'dA constructed'
         # end-snippet-2
         # We now need to add a logistic layer on top of the MLP
         self.logLayer = LogisticRegression(
@@ -165,6 +187,8 @@ class SdA(object):
             n_in=hidden_layers_sizes[-1],
             n_out=n_outs
         )
+        
+        
 
         self.params.extend(self.logLayer.params)
         # construct a function that implements one step of finetunining

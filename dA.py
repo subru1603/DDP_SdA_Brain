@@ -138,7 +138,7 @@ class dA(object):
             theano_rng = RandomStreams(numpy_rng.randint(2 ** 30))
 
         # note : W' was written as `W_prime` and b' as `b_prime`
-        if not W:
+        if W is None:
             # W is initialized with `initial_W` which is uniformely sampled
             # from -4*sqrt(6./(n_visible+n_hidden)) and
             # 4*sqrt(6./(n_hidden+n_visible))the output of uniform if
@@ -154,7 +154,7 @@ class dA(object):
             )
             W = theano.shared(value=initial_W, name='W', borrow=True)
 
-        if not bvis:
+        if bvis is None:
             bvis = theano.shared(
                 value=numpy.zeros(
                     n_visible,
@@ -163,7 +163,7 @@ class dA(object):
                 borrow=True
             )
 
-        if not bhid:
+        if bhid is None:
             bhid = theano.shared(
                 value=numpy.zeros(
                     n_hidden,

@@ -3,11 +3,12 @@ from SdA import *
 import getopt
 import cPickle
 
-def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
-             pretrain_lr=0.001, training_epochs=5, 
+def test_SdA(finetune_lr=0.1, pretraining_epochs=20,
+             pretrain_lr=0.001, training_epochs=50, 
              patch_filename = 'Training_patches.npy', groundtruth_filename = 'training_reshape.npy',
              test_filename = 'Test_patches.npy', testtruth_filename = 'test_reshape.npy', 
-             batch_size=100):
+             batch_size=100, n_ins = 22*22, n_outs = 5, hidden_layers_sizes = [1000,1000,1000] ):
+                 
     """
     Demonstrates how to train and test a stochastic denoising autoencoder.
 
@@ -24,38 +25,83 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
     :param pretrain_lr: learning rate to be used during pre-training
 
     :type n_iter: int
-    :param n_iter: maximal number of iterations ot run the optimizer
+    :param n_iter: maximal number of iterations to run the optimizer
 
     :type dataset: string
     :param dataset: path the the pickled dataset
 
     """
+    print '###########################'
+    print 'Pretraining epochs: ', pretraining_epochs
+    print 'Finetuning epochs: ', training_epochs
+    print '###########################'
+    
+    W = []
+    b = []
+    
     #########################################################
-     resumeTraining = False
-     opts, arg = getopt.getopt(sys.argv[1:],"rp:")
-     for opt, arg in opts:
-         if opt == '-r':
-             resumeTraining = True                               # make this true to resume training from saved model    
-         elif opt == '-p':
-             prefix = arg
+    #########################################################
+    prefix = 'SdA'
+    resumeTraining = False
+    opts, arg = getopt.getopt(sys.argv[1:],"rp:")
+    for opt, arg in opts:
+        if opt == '-r':
+            resumeTraining = True                               # make this true to resume training from saved model    
+        elif opt == '-p':
+            prefix = arg
             
-    # if(resumeTraining):
-    #     savedModel = file(prefix+'best_valid_momentum.pkl','rb')
-    #     genVariables = cPickle.load(savedModel)
-    #     print genVariables
-    #     (epoch,best_validation_loss,learning_rate,patience,itr) = genVariables
-    #     W = cPickle.load(savedModel)
-    #     b= cPickle.load(savedModel)
-    #     b_prime= cPickle.load(savedModel)
-    # else:
-    #     epoch,best_validation_loss,learning_rate,patience,itr = [0,numpy.inf,learning_rate,100,0]
-    #     W = None
-    #     b = None
-    #     b_prime= None       
-    ##############################
-
-    datasets = load_data('Training_patches.npy','training_reshape.npy','Test_patches.npy','test_reshape.npy')
-
+    flagValue = 1    
+    
+    if(resumeTraining):
+        
+        flagFile = file(prefix+'flag.pkl','rb')
+        
+        try:
+            flagValue = cPickle.load(flagFile)
+        except:
+            pass
+        
+        savedModel_preTraining = file(prefix+'pre_training.pkl','rb')
+        genVariables_preTraining = cPickle.load(savedModel_preTraining)
+        layer_number, epochs_done_preTraining, mean_cost , pretrain_lr = genVariables_preTraining
+        epoch_flag = 1
+        print 'Inside resumeTraining!!!!!!!!!!!!!!!!!!'
+        no_of_layers = len(hidden_layers_sizes) + 1
+        
+        for i in xrange(no_of_layers):
+            try:
+                W.append(cPickle.load(savedModel_preTraining))
+                b.append(cPickle.load(savedModel_preTraining))
+            except:
+                W.append(None)
+                b.append(None)
+                    
+        if flagValue is 2:
+            epochFlag_fineTuning = 1
+            iterFlag = 1
+            savedModel_fineTuning = file(prefix+'fine_tuning.pkl','rb')
+            genVariables_fineTuning = cPickle.load(savedModel_fineTuning)
+            epochs_done_fineTuning,best_validation_loss,finetune_lr,patience,iters_done = genVariables_fineTuning
+    
+   
+    else:
+        
+        layer_number, epochs_done, mean_cost, pretrain_lr = [0,0,0,pretrain_lr]
+        epoch_flag = 0
+        epochFlag_fineTuning = 0
+        iterFlag = 0
+        W = None
+        b = None
+                
+    ##############################################################
+    ##############################################################
+                
+    print '###########################'
+    print 'Pretraining epochs: ', pretraining_epochs
+    print 'Finetuning epochs: ', training_epochs
+    print '###########################'
+                
+    datasets = load_data(patch_filename,groundtruth_filename, test_filename, testtruth_filename)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -69,62 +115,87 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
     # start-snippet-3
     numpy_rng = numpy.random.RandomState(89677)
     print '... building the model'
-    # construct the stacked denoising autoencoder class
+    
+#    print 'W: ', W
+#    print 'b: ', b
+    
+    ################################################################
+    ################CONSTRUCTION OF SdA CLASS#######################
     sda = SdA(
         numpy_rng=numpy_rng,
-        n_ins=22 * 22,
-        hidden_layers_sizes=[1000, 1000, 1000],
-        n_outs=5
-    )
+        n_ins=n_ins,
+        hidden_layers_sizes=hidden_layers_sizes,
+        n_outs=n_outs, W = W, b=b)
+        
+    print 'SdA constructed'
+    ################################################################
+    ################################################################
+    if flagValue is 1:
+    ################################################################
     # end-snippet-3 start-snippet-4
     #########################
     # PRETRAINING THE MODEL #
     #########################
-    print '... getting the pretraining functions'
-    pretraining_fns = sda.pretraining_functions(train_set_x=train_set_x,
+    
+        flag = open(prefix+'flag.pkl','wb')
+        cPickle.dump(1,flag, protocol = cPickle.HIGHEST_PROTOCOL)
+        flag.close()
+            
+        print '... getting the pretraining functions'
+        pretraining_fns = sda.pretraining_functions(train_set_x=train_set_x,
                                                 batch_size=batch_size)
-    print 'Length of pretraining function: ', len(pretraining_fns)
+        print 'Length of pretraining function: ', len(pretraining_fns)
 
-    print '... pre-training the model'
-    start_time = time.clock()
-    ## Pre-train layer-wise
-    corruption_levels = [.1, .2, .3]
-    for i in xrange(sda.n_layers):
-        #print i
-        # go through pretraining epochs
-        for epoch in xrange(pretraining_epochs):
-            # go through the training set
-            c = []
-            for batch_index in xrange(n_train_batches):
-                #sprint batch_index
-                c.append(pretraining_fns[i](index=batch_index,
+        print '... pre-training the model'
+        start_time = time.clock()
+        ## Pre-train layer-wise
+        corruption_levels = [.1, .2, .3]
+        for i in xrange(sda.n_layers):
+        
+            if i < layer_number:
+                i = layer_number
+                #print i
+                # go through pretraining epochs
+        
+            for epoch in xrange(pretraining_epochs):
+                ##########################################            
+                if epoch_flag is 1 and epoch < epochs_done_preTraining:
+                    epoch = epochs_done_preTraining
+                    epoch_flag = 0
+                    ##########################################
+                    # go through the training set
+                c = []
+                for batch_index in xrange(n_train_batches):
+                    #sprint batch_index
+                    c.append(pretraining_fns[i](index=batch_index,
                          corruption=corruption_levels[i],
                          lr=pretrain_lr))
-            print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
-            print numpy.mean(c)
+                print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
+                print numpy.mean(c)
 
-            flag = open('flag.pkl','wb')
-            cPickle.dump(1,flag, protocol = cPickle.HIGHEST_PROTOCOL)
-            flag.close()
+            
 
-            save_valid = open('pre_training.pkl', 'wb')
-            #print 'YO! i=',i,' epoch=',epoch,' cost=',numpy.mean(c) 
-            #print pretrain_lr
-            genVariables = [i, epoch, numpy.mean(c), pretrain_lr]
-            cPickle.dump(genVariables,save_valid,protocol = cPickle.HIGHEST_PROTOCOL)
-            for j in xrange(len(sda.params)):
-                cPickle.dump(sda.params[j].get_value(borrow=True), save_valid, protocol = cPickle.HIGHEST_PROTOCOL)
-            save_valid.close()
+                save_valid = open(prefix+'pre_training.pkl', 'wb')
+                #print 'YO! i=',i,' epoch=',epoch,' cost=',numpy.mean(c) 
+                #print pretrain_lr
+                genVariables = [i, epoch, numpy.mean(c), pretrain_lr]
+                cPickle.dump(genVariables,save_valid,protocol = cPickle.HIGHEST_PROTOCOL)
+                for j in xrange(len(sda.params)):
+                    cPickle.dump(sda.params[j].get_value(borrow=True), save_valid, protocol = cPickle.HIGHEST_PROTOCOL)
+                save_valid.close()
 
 
 
 
-    #print sda.params[0]
-    end_time = time.clock()
+        #print sda.params[0]
+        end_time = time.clock()
 
-    print >> sys.stderr, ('The pretraining code for file ' +
+        print >> sys.stderr, ('The pretraining code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          
+                          
+                          
     # end-snippet-4
     ########################
     # FINETUNING THE MODEL #
@@ -153,15 +224,27 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
 
     done_looping = False
     epoch = 0
-    flag = open('flag.pkl','wb')
+    flag = open(prefix+'flag.pkl','wb')
     cPickle.dump(2,flag, protocol = cPickle.HIGHEST_PROTOCOL)
     flag.close()
+    
     log_valid_cost=[]
 
     while (epoch < training_epochs) and (not done_looping):
+        
+        if epochFlag_fineTuning is 1 and epoch < epochs_done_fineTuning:
+            epoch = epochs_done_fineTuning
+            epochFlag_fineTuning = 0
+            
         epoch = epoch + 1
+        
         for minibatch_index in xrange(n_train_batches):
             minibatch_avg_cost = train_fn(minibatch_index)
+            
+            if iterFlag is 1 and iter < iters_done:
+                iter = iters_done
+                iterFlag = 0
+                
             iter = (epoch - 1) * n_train_batches + minibatch_index
 
             if (iter + 1) % validation_frequency == 0:
@@ -185,9 +268,10 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
                     # save best validation score and iteration number
                     best_validation_loss = this_validation_loss
                     best_iter = iter
+                    
                     print 'Saving the best validation network'
                     genVariables = [epoch,best_validation_loss,finetune_lr,patience,iter]
-                    save_file = open('fine_tuning.pkl','wb')
+                    save_file = open(prefix+'fine_tuning.pkl','wb')
                     cPickle.dump(genVariables, save_file)
                     for j in xrange(len(sda.params)):
                         cPickle.dump(sda.params[j].get_value(borrow=True), save_file, protocol = cPickle.HIGHEST_PROTOCOL)
@@ -196,8 +280,6 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=3,
                     for l in log_valid_cost:
                         valid_file.write("%f\n"%l)
                     log_valid_cost=[]
-
-
 
 
                     # test it on the test set
