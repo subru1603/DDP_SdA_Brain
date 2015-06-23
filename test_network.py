@@ -30,7 +30,7 @@ def predictOutput(test_data):
     layers = [activate(test_data,W_list[0],b_list[0])]
     
     for i in xrange(1, len(hidden_layers_sizes) + 1):
-        if i < len(hidden_layers_sizes) + 1:
+        if i < len(hidden_layers_sizes):
             layers.append(activate(layers[i-1],W_list[i],b_list[i]))
         else:
             layers.append(classification(layers[i-1],W_list[i],b_list[i]))
@@ -47,10 +47,10 @@ if __name__ == '__main__':
     
     test_patches = np.load('Test_patches.npy')
     no_of_patches = test_patches.shape[0]
-    
+    pred = []
     for i in xrange(no_of_patches):
         test_data = test_patches[i]
-        pred = predictOutput(test_data=test_data)
+        pred.append(predictOutput(test_data=test_data))
         
         
         
