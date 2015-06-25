@@ -11,21 +11,29 @@ def initializeNetwork():
     hidden_layers_sizes = [1000,1000,1000]
     
     ins = T.matrix('ins')
-    weights1 = T.matrix('weights1')
-    weights2 = T.matrix('weights2')
-    weights3 = T.matrix('weights3')
-    weights4 = T.matrix('weights4')
-    biases1 = T.vector('biases1')
-    biases2 = T.vector('biases2')
-    biases3 = T.vector('biases3')
-    biases4 = T.vector('biases4')
     
-    layer1 = T.nnet.sigmoid(T.dot(ins,weights1) + biases1)
-    layer2 = T.nnet.sigmoid(T.dot(layer1,weights2) + biases2)
-    layer3 = T.nnet.sigmoid(T.dot(layer2,weights3) + biases3)
-    answer = T.argmax(T.nnet.softmax(T.dot(layer3,weights4) + biases4),axis=1)
+    theano_weights = []
+    theano_biases = []
+    theano_layers = []
+    for i in xrange(len(hidden_layers_sizes) + 1):
+        theano_weights.append(T.matrix('weights'))
+        theano_biases.append(T.vector('biases'))
+        if i is 0:
+            theano_layers.append(T.nnet.sigmoid(T.dot(ins,theano_weights[i]) + theano_biases[i]))
+        elif i is len(hidden_layers_sizes):
+            theano_layers.append(T.nnet.softmax(T.dot(theano_layers[i-1],theano_weights[i]) + theano_biases[i]))
+        else:
+            theano_layers.append(T.nnet.sigmoid(T.dot(theano_layers[i-1],theano_weights[i]) + theano_biases[i]))
+        
+    answer = T.argmax(theano_layers[len(hidden_layers_sizes)],axis=1)
     
-    activate2 = theano.function(inputs = [ins,weights1,weights2,weights3,weights4,biases1,biases2,biases3,biases4], outputs=answer,allow_input_downcast=True)
+    print ins
+    print theano_weights
+    print theano_biases
+    
+    _input = [ins] + theano_weights + theano_biases
+    
+    activate2 = theano.function(inputs = _input, outputs=answer,allow_input_downcast=True)
     
     openFile_fineTuning = open('SdAfine_tuning.pkl','rb')
     genVariables_load = cPickle.load(openFile_fineTuning)
@@ -56,7 +64,7 @@ def classify_test_data(activate2, W_list, b_list):
     patch_size = 11
 
     for subdir, dirs, files in os.walk(path):
-        if len(Flair) is 5:
+        if len(Flair) is 20:
             break
         for file1 in files:
             #print file1

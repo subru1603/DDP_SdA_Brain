@@ -6,6 +6,7 @@ NOT TESTED ON PYTHON 3
 """
 
 import numpy as np
+import zlib
 
 class new():
 	
@@ -101,6 +102,7 @@ class new():
 			## Read raw data
 			self.data=''.join(f.readlines())
 			f.close()
+			self.data = zlib.decompress(self.data)
 			
 			## Raw data from string to array
 			if data_type == 'MET_SHORT':
