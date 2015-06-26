@@ -33,6 +33,7 @@
 import os
 import sys
 import time
+from breze.arch.component import corrupt
 
 import numpy
 
@@ -213,9 +214,10 @@ class dA(object):
                 correctly as it only support float32 for now.
 
         """
-        return self.theano_rng.binomial(size=input.shape, n=1,
-                                        p=1 - corruption_level,
-                                        dtype=theano.config.floatX) * input
+#        return self.theano_rng.binomial(size=input.shape, n=1,
+#                                        p=1 - corruption_level,
+#                                        dtype=theano.config.floatX) * input
+        return corrupt.gaussian_perturb(input,corruption_level)
 
     def get_hidden_values(self, input):
         """ Computes the values of the hidden layer """
