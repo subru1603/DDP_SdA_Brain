@@ -20,7 +20,7 @@ patches = np.zeros(patch_pixels*4)
 ground_truth = np.zeros(1)
 
 #paths to images
-path = 'data/Normalized_Training/'
+path = '../BRATS/Normalised_Testing/'
 
 Flair = []
 T1 = []
@@ -30,7 +30,10 @@ Truth = []
 Folder = []
 
 for subdir, dirs, files in os.walk(path):
-    for file1 in files:
+    if len(Flair)>5:
+        break
+    for file1 in files:     
+            
         #print file1
         if file1[-3:]=='mha' and 'Flair' in file1:
             Flair.append(file1)
@@ -50,7 +53,7 @@ print 'Number of images : ', number_of_images
 
 count1, count2, count3, count4, count5 = 0,0,0,0,0
 for image_iterator in range(number_of_images):
-    print 'Iteration : ',image_iterator+1
+    print 'Image number : ',image_iterator+1
     print 'Folder : ', Folder[image_iterator]
     Flair_image = mha.new(Folder[image_iterator]+Flair[image_iterator])
     T1_image = mha.new(Folder[image_iterator]+T1[image_iterator])
@@ -121,5 +124,10 @@ print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
 print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
 print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
 
+ground_truth = ground_truth.reshape(len(ground_truth))
 #np.save('Training_patches.npy',patches)
 #np.save('Training_labesl.npy',ground_truth)
+#print ground_truth.shape
+#print patches.shape
+#np.save('Testing_patches.npy',patches)
+#np.save('Testing_labesl.npy',ground_truth)
