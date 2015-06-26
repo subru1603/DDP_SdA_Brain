@@ -9,11 +9,13 @@ try:
 except ImportError:
     import Image
 
-def test_SdA(finetune_lr=0.1, pretraining_epochs=100,
-             pretrain_lr=0.001, training_epochs=150, 
-             patch_filename = 'Training_patches.npy', groundtruth_filename = 'training_reshape.npy',
-             test_filename = 'Test_patches.npy', testtruth_filename = 'test_reshape.npy', 
-             batch_size=100, n_ins = 22*22, n_outs = 5, hidden_layers_sizes = [1000,1000,1000] ):
+
+root = '../BRATS/3D/'
+def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
+             pretrain_lr=0.001, training_epochs=50, 
+             patch_filename = root+'Training_patches.npy', groundtruth_filename = root+'Training_labels.npy',
+             test_filename = root+'Testing_patches.npy', testtruth_filename = root+'Testing_labels.npy', 
+             batch_size=100, n_ins = 1452, n_outs = 5, hidden_layers_sizes = [2500,2500,2500] ):
                  
     """
     Demonstrates how to train and test a stochastic denoising autoencoder.
@@ -159,7 +161,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=100,
         print '... pre-training the model'
         start_time = time.clock()
         ## Pre-train layer-wise
-        corruption_levels = [.5, .6, .7]
+        corruption_levels = [.4, .4, .4]
         for i in xrange(sda.n_layers):
         
             if i < layer_number:
@@ -282,6 +284,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=100,
                     print 'Saving the best validation network'
                     genVariables = [epoch,best_validation_loss,finetune_lr,patience,iter]
                     save_file = open(prefix+'fine_tuning.pkl','wb')
+                    cPickle.dump(hidden_layers_sizes, save_file)
                     cPickle.dump(genVariables, save_file)
                     for j in xrange(len(sda.params)):
                         cPickle.dump(sda.params[j].get_value(borrow=True), save_file, protocol = cPickle.HIGHEST_PROTOCOL)
@@ -318,13 +321,13 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=100,
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
                           
     
-    print sda.params
-    
-    image = Image.fromarray(
-        tile_raster_images(X=(sda.params[0]).get_value(borrow=True).T,
-                           img_shape=(22, 22), tile_shape=(10,10),
-                           tile_spacing=(1, 1)))
-    image.save('filters1.png')
+#    print sda.params
+#    
+#    image = Image.fromarray(
+#        tile_raster_images(X=(sda.params[0]).get_value(borrow=True).T,
+#                           img_shape=(22, 22), tile_shape=(10,10),
+#                           tile_spacing=(1, 1)))
+#    image.save('filters1.png')
     
 #    print 'Testing.....'
 #    
