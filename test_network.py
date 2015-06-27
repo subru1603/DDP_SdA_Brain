@@ -8,7 +8,8 @@ from sklearn.feature_extraction import image
 import os
 
 def initializeNetwork():
-    openFile_fineTuning = open('SdAfine_tuning.pkl','rb')
+    prefix = 'SdA'
+    openFile_fineTuning = open(prefix+'fine_tuning.pkl','rb')
     hidden_layers_sizes = cPickle.load(openFile_fineTuning)
     
     ins = T.matrix('ins')
@@ -130,17 +131,17 @@ def classify_test_data(activate2, W_list, b_list):
         
 
 def classify_test_data_3d(activate2, W_list, b_list):
-    path = '../BRATS/Normalised_Testing/'
+    path = '../BRATS/10_1/Normalised_Test/'
     Flair = []
     T1 = []
     T2 = []
     T_1c = []
     Folder = []
     Subdir_array = []
-    patch_size = 11
-    patch_size_x = 11
-    patch_size_y = 11
-    patch_size_z = 3
+#    patch_size = 11
+    patch_size_x = 5
+    patch_size_y = 5
+    patch_size_z = 5
 
     for subdir, dirs, files in os.walk(path):
         if len(Flair) is 20:

@@ -10,12 +10,17 @@ except ImportError:
     import Image
 
 
+
+##########---------SET PREFIX--------##########
+Prefix = 'SdA'
+
 root = '../BRATS/3D/'
-def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
-             pretrain_lr=0.001, training_epochs=50, 
-             patch_filename = root+'Training_patches.npy', groundtruth_filename = root+'Training_labels.npy',
-             test_filename = root+'Testing_patches.npy', testtruth_filename = root+'Testing_labels.npy', 
-             batch_size=100, n_ins = 1452, n_outs = 5, hidden_layers_sizes = [2500,2500,2500] ):
+def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
+             pretrain_lr=0.001, training_epochs=1, 
+             patch_filename = 'Training_patches.npy', groundtruth_filename = 'Training_labels.npy',
+             valid_filename = 'Valid_patches.npy', validtruth_filename = 'Valid_labels.npy',
+#             test_filename = root+'Testing_patches.npy', testtruth_filename = root+'Testing_labels.npy',
+             batch_size=100, n_ins = 500, n_outs = 5, hidden_layers_sizes = [1000,1000,1000] ):
                  
     """
     Demonstrates how to train and test a stochastic denoising autoencoder.
@@ -50,7 +55,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
     #########################################################
     #########################################################
     prefix = 'SdA'
-    resumeTraining = False
+    resumeTraining = True
     
     #@@@@@@@@ Needs to be worked on @@@@@@@@@@@@@@@@@
     # Snippet to resume training if the program crashes halfway through #
@@ -91,6 +96,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
             epochFlag_fineTuning = 1
             iterFlag = 1
             savedModel_fineTuning = file(prefix+'fine_tuning.pkl','rb')
+            hidden_layers_sizes = cPickle.load(savedModel_fineTuning)
             genVariables_fineTuning = cPickle.load(savedModel_fineTuning)
             epochs_done_fineTuning,best_validation_loss,finetune_lr,patience,iters_done = genVariables_fineTuning
     
@@ -106,14 +112,9 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
                 
     ##############################################################
     ##############################################################
-                
-    print '###########################'
-    print 'Pretraining epochs: ', pretraining_epochs
-    print 'Finetuning epochs: ', training_epochs
-    print '###########################'
 
                     
-    datasets = load_data(patch_filename,groundtruth_filename, test_filename, testtruth_filename)
+    datasets = load_data(patch_filename,groundtruth_filename,valid_filename,validtruth_filename)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -161,6 +162,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
         print '... pre-training the model'
         start_time = time.clock()
         ## Pre-train layer-wise
+        log_pretrain_cost = []
         corruption_levels = [.4, .4, .4]
         for i in xrange(sda.n_layers):
         
@@ -184,6 +186,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
                          lr=pretrain_lr))
                 print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
                 print numpy.mean(c)
+                log_pretrain_cost.append(numpy.mean(c))
 
             
 
@@ -195,7 +198,12 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
                 for j in xrange(len(sda.params)):
                     cPickle.dump(sda.params[j].get_value(borrow=True), save_valid, protocol = cPickle.HIGHEST_PROTOCOL)
                 save_valid.close()
-
+        
+        
+        pretrain_log_file = open(prefix + 'log_pretrain_cost.txt', "a")
+        for l in log_pretrain_cost:
+            pretrain_log_file.write("%f\n"%l)
+        pretrain_log_file.close()
 
 
 

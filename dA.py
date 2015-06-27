@@ -33,7 +33,6 @@
 import os
 import sys
 import time
-from breze.arch.component import corrupt
 
 import numpy
 
@@ -43,6 +42,8 @@ from theano.tensor.shared_randomstreams import RandomStreams
 
 from logistic_sgd import load_data
 from utils import tile_raster_images
+
+from breze.arch.component import corrupt
 
 try:
     import PIL.Image as Image
@@ -217,6 +218,7 @@ class dA(object):
 #        return self.theano_rng.binomial(size=input.shape, n=1,
 #                                        p=1 - corruption_level,
 #                                        dtype=theano.config.floatX) * input
+        
         return corrupt.gaussian_perturb(input,corruption_level)
 
     def get_hidden_values(self, input):

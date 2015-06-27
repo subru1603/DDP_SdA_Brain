@@ -156,7 +156,7 @@ class SdA(object):
                                         b = b_temp[i],
                                         activation=T.nnet.sigmoid)
                                         
-            print 'Hidden Layer created'
+#            print 'Hidden Layer created'
             # add the layer to our list of layers
             self.sigmoid_layers.append(sigmoid_layer)
             # its arguably a philosophical question...
@@ -166,7 +166,7 @@ class SdA(object):
             # dA, but not the SdA
             self.params.extend(sigmoid_layer.params)
             
-            print 'W: ', (sigmoid_layer.W).shape
+#            print 'W: ', (sigmoid_layer.W).shape
 
             # Construct a denoising autoencoder that shared weights with this
             # layer
@@ -179,7 +179,7 @@ class SdA(object):
                           bhid=sigmoid_layer.b)
             self.dA_layers.append(dA_layer)
             
-            print 'dA constructed'
+#            print 'dA constructed'
         # end-snippet-2
         # We now need to add a logistic layer on top of the MLP
         self.logLayer = LogisticRegression(
