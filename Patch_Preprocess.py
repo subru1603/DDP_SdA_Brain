@@ -20,7 +20,7 @@ patches = np.zeros(patch_pixels*4)
 ground_truth = np.zeros(1)
 
 #paths to images
-path = '../BRATS/Normalised_Testing/'
+path = '../BRATS/10_1/training/'
 
 Flair = []
 T1 = []
@@ -30,7 +30,7 @@ Truth = []
 Folder = []
 
 for subdir, dirs, files in os.walk(path):
-    if len(Flair)>5:
+    if len(Flair) == 20:
         break
     for file1 in files:     
             
@@ -118,15 +118,14 @@ for image_iterator in range(number_of_images):
 print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
 print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
 
-print
 print 'No. of 1 : ', np.sum((ground_truth==1).astype(int))
 print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
 print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
 print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
 
 ground_truth = ground_truth.reshape(len(ground_truth))
-#np.save('Training_patches.npy',patches)
-#np.save('Training_labesl.npy',ground_truth)
+np.save('Training_patches.npy',patches)
+np.save('Training_labels.npy',ground_truth)
 #print ground_truth.shape
 #print patches.shape
 #np.save('Testing_patches.npy',patches)

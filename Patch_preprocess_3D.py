@@ -12,22 +12,26 @@ from sklearn.feature_extraction import image
 #from matplotlib import pyplot as plt
 
 #Initialize user variables
-patch_size = 11
+#patch_size = 125
 
-patch_size_x = 11
-patch_size_y = 11
-patch_size_z = 3
+patch_size_x = 5
+patch_size_y = 5
+patch_size_z = 5
 
-patch_pixels = patch_size*patch_size
-pixel_offset = int(patch_size*0.7)
-padding = patch_size/2
+patch_pixels = patch_size_x*patch_size_y*patch_size_z
+
+pixel_offset_x = int(2*patch_size_x*0.7)
+pixel_offset_y = int(2*patch_size_y*0.7)
+pixel_offset_z = 1
+
+padding = patch_size_x/2
 threshold = patch_pixels*0.3
 #patches = np.zeros(patch_pixels*4)
 patches = np.zeros(patch_size_x*patch_size_y*patch_size_z*4)
 ground_truth = np.zeros(1)
 
 #paths to images
-path = '../data/Normalized_Testing/'
+path = '../BRATS/10_1/validation/'
 
 Flair = []
 T1 = []
@@ -82,11 +86,11 @@ for image_iterator in range(number_of_images):
     z_start = np.min(z_span) - padding
     z_stop = np.max(z_span) +padding+1
     
-    Flair_patch = image.extract_patches(Flair_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset,pixel_offset,1))
-    T1_patch = image.extract_patches(T1_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset,pixel_offset,1))
-    T2_patch = image.extract_patches(T2_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset,pixel_offset,1))
-    T_1c_patch = image.extract_patches(T_1c_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset,pixel_offset,1))
-    Truth_patch = image.extract_patches(Truth_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset,pixel_offset,1))
+    Flair_patch = image.extract_patches(Flair_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset_x,pixel_offset_y,1))
+    T1_patch = image.extract_patches(T1_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset_x,pixel_offset_y,1))
+    T2_patch = image.extract_patches(T2_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset_x,pixel_offset_y,1))
+    T_1c_patch = image.extract_patches(T_1c_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset_x,pixel_offset_y,1))
+    Truth_patch = image.extract_patches(Truth_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z],(pixel_offset_x,pixel_offset_y,1))
     
     print 'Raw patches extracted'    
     
@@ -122,8 +126,8 @@ ground_truth = ground_truth.reshape(len(ground_truth))
 
 
 #np.save('Training_patches.npy',patches)
-#np.save('Training_labesl.npy',ground_truth)
+#np.save('Training_labels.npy',ground_truth)
 #print ground_truth.shape
 #print patches.shape
-np.save('Testing_patches.npy',patches)
-np.save('Testing_labesl.npy',ground_truth)
+np.save('Valid_patches.npy',patches)
+np.save('Valid_labels.npy',ground_truth)
