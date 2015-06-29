@@ -8,19 +8,15 @@ try:
     import PIL.Image as Image
 except ImportError:
     import Image
+import os
 
 
 
-##########---------SET PREFIX--------##########
-Prefix = 'SdA'
-
-root = '../BRATS/3D/'
 def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
              pretrain_lr=0.001, training_epochs=1, 
-             patch_filename = 'Training_patches.npy', groundtruth_filename = 'Training_labels.npy',
-             valid_filename = 'Valid_patches.npy', validtruth_filename = 'Valid_labels.npy',
-#             test_filename = root+'Testing_patches.npy', testtruth_filename = root+'Testing_labels.npy',
-             batch_size=100, n_ins = 500, n_outs = 5, hidden_layers_sizes = [1000,1000,1000] ):
+             patch_filename = 'Training_patches_norm.npy', groundtruth_filename = 'Training_labels_norm.npy',
+             valid_filename = 'Validation_patches_norm.npy', validtruth_filename = 'Validation_labels_norm.npy',
+             batch_size=100, n_ins = 605, n_outs = 5, hidden_layers_sizes = [1000,1000,1000],prefix = '11_11_3_G4_' ):
                  
     """
     Demonstrates how to train and test a stochastic denoising autoencoder.
@@ -44,6 +40,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
     :param dataset: path the the pickled dataset
 
     """
+   
     print '###########################'
     print 'Pretraining epochs: ', pretraining_epochs
     print 'Finetuning epochs: ', training_epochs
@@ -54,8 +51,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
     
     #########################################################
     #########################################################
-    prefix = 'SdA'
-    resumeTraining = True
+   
+    resumeTraining = False
     
     #@@@@@@@@ Needs to be worked on @@@@@@@@@@@@@@@@@
     # Snippet to resume training if the program crashes halfway through #
@@ -223,7 +220,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
 
     # get the training, validation and testing function for the model
     print '... getting the finetuning functions'
-    train_fn, validate_model, test_model = sda.build_finetune_functions(datasets=datasets,batch_size=batch_size,learning_rate=finetune_lr)
+    train_fn, validate_model, test_model = sda.build_finetune_functions(datasets=datasets,batch_size=100,learning_rate=0.1)
 
     print '... finetunning the model'
     # early-stopping parameters
@@ -289,6 +286,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
                     best_validation_loss = this_validation_loss
                     best_iter = iter
                     
+                    
                     print 'Saving the best validation network'
                     genVariables = [epoch,best_validation_loss,finetune_lr,patience,iter]
                     save_file = open(prefix+'fine_tuning.pkl','wb')
@@ -301,8 +299,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
                     for l in log_valid_cost:
                         valid_file.write("%f\n"%l)
                     log_valid_cost=[]
-
-
+                    
+                
                     # test it on the test set
                     test_losses = test_model()
                     test_score = numpy.mean(test_losses)
@@ -310,6 +308,11 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
                            'best model %f %%') %
                           (epoch, minibatch_index + 1, n_train_batches,
                            test_score * 100.))
+
+                else :
+                    print 'validation loss not decreasing, hence reducing lr'
+                    finetune_lr=0.8*finetune_lr
+
 
             if patience <= iter:
                 done_looping = True

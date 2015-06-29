@@ -10,7 +10,7 @@ import numpy
 import math
 import numpy as np
 
-def load_data(patch_filename, groundtruth_filename, test_filename, testtruth_filename):
+def load_data(patch_filename, groundtruth_filename, valid_filename, validtruth_filename):
     ''' Loads the dataset
 
     :type dataset: string
@@ -25,32 +25,44 @@ def load_data(patch_filename, groundtruth_filename, test_filename, testtruth_fil
     print '... loading data'
 
     
-    patch_array = np.load(patch_filename)
+    train_array = np.load(patch_filename)
     groundtruth_array = np.load(groundtruth_filename)
 
+    valid_patch_array = np.load(valid_filename)
+    valid_truth_array = np.load(validtruth_filename)
     
-    no_of_patches = patch_array.shape[0]
+    no_of_patches = valid_patch_array.shape[0]
     index = np.arange(no_of_patches)
     np.random.shuffle(index)
     
     print(no_of_patches)
     
-    n_trainset = int(math.floor(0.7*no_of_patches))
-    n_validset = int(math.ceil(0.3*no_of_patches))
+    n_validset = int(math.floor(0.7*no_of_patches))
+    n_testset = int(math.ceil(0.3*no_of_patches))
     
-    train_set_x = patch_array[index[0:n_trainset]]
-    train_set_y = groundtruth_array[index[0:n_trainset]]
+#    train_set_x = patch_array[index[0:n_trainset]]
+#    train_set_y = groundtruth_array[index[0:n_trainset]]
+    train_set_x = np.load(patch_filename)
+    train_set_y = np.load(groundtruth_filename)
     
-    valid_set_x = patch_array[index[n_trainset:no_of_patches]]
-    valid_set_y = groundtruth_array[index[n_trainset:no_of_patches]]
+    valid_set_x = valid_patch_array[index[0:n_validset]]
+    valid_set_y = valid_truth_array[index[0:n_validset]]
+    
+#    valid_set_x = patch_array[index[n_trainset:no_of_patches]]
+#    valid_set_y = groundtruth_array[index[n_trainset:no_of_patches]]
+#    valid_set_x = np.load(valid_filename)
+#    valid_set_y = np.load(validtruth_filename)
             
-    test_set_x = np.load(test_filename)
-    test_set_y = np.load(testtruth_filename)
+#    test_set_x = np.load(test_filename)
+#    test_set_y = np.load(testtruth_filename)
+            
+    test_set_x = valid_patch_array[index[n_validset:no_of_patches]]
+    test_set_y = valid_truth_array[index[n_validset:no_of_patches]]
     
     
-    print('Test set shape', test_set_x.shape[0])
-    print(valid_set_x.shape[0])
-    print(train_set_x.shape[0])
+#    print('Test set shape', test_set_x.shape[0])
+#    print(valid_set_x.shape[0])
+#    print(train_set_x.shape[0])
         
     
     #train_set, valid_set, test_set format: tuple(input, target)
@@ -93,4 +105,4 @@ def load_data(patch_filename, groundtruth_filename, test_filename, testtruth_fil
     return rval
 
 if __name__ == '__main__':
-    load_data('Training_patches.npy','training_reshape.npy','Test_patches.npy','test_reshape.npy')
+    load_data('Training_patches.npy','training_reshape.npy','Valid_patches.npy','Valid_reshape.npy')

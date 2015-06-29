@@ -155,6 +155,8 @@ class dA(object):
                 dtype=theano.config.floatX
             )
             W = theano.shared(value=initial_W, name='W', borrow=True)
+#        else:
+#            W = theano.shared(value=W,name='W',borrow=True)
 
         if bvis is None:
             bvis = theano.shared(
@@ -164,6 +166,7 @@ class dA(object):
                 ),
                 borrow=True
             )
+            
 
         if bhid is None:
             bhid = theano.shared(
@@ -174,6 +177,8 @@ class dA(object):
                 name='b',
                 borrow=True
             )
+#        else:
+#            bhid = theano.shared(value=bhid,name='b',borrow=True)
 
         self.W = W
         # b corresponds to the bias of the hidden
@@ -231,8 +236,26 @@ class dA(object):
 
         """
         return T.dot(hidden, self.W_prime) + self.b_prime
+        
+#    def kl_divergence(self, p, p_hat):
+#        term1 = p * T.log(p)
+#        term2 = p * T.log(p_hat)
+#        term3 = (1-p) * T.log(1 - p)
+#        term4 = (1-p) * T.log(1 - p_hat)
+#        return term1 - term2 + term3 - term4
+#        
+#    def sparsity_penalty(self, y, sparsity_level=0.005, sparse_reg=1e-3):
+##        if batch_size == -1 or batch_size == 0:
+##            raise Exception("Invalid batch_size!")
+#        sparsity_level = T.extra_ops.repeat(sparsity_level, self.n_hidden)
+#        sparsity_penalty = 0
+#        avg_act = y.mean(axis=0)
+#        kl_div = self.kl_divergence(sparsity_level, avg_act)
+#        sparsity_penalty = sparse_reg * kl_div.sum()
+#        # Implement KL divergence here.
+#        return sparsity_penalty
 
-    def get_cost_updates(self, corruption_level, learning_rate):
+    def get_cost_updates(self, corruption_level, learning_rate,sparsity_level=0.005,sparsity_reg=1e-3):
         """ This function computes the cost and the updates for one trainng
         step of the dA """
 
@@ -244,6 +267,7 @@ class dA(object):
         #        example in minibatch
 #        L = - T.sum(self.x * T.log(z) + (1 - self.x) * T.log(1 - z), axis=1)
         cost = T.mean(((self.x - z)**2).sum(axis=1))
+#        cost = cost1 + self.sparsity_penalty(y,sparsity_level,sparsity_reg)
         # note : L is now a vector, where each element is the
         #        cross-entropy cost of the reconstruction of the
         #        corresponding example of the minibatch. We need to

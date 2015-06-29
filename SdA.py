@@ -164,6 +164,7 @@ class SdA(object):
             # sigmoid_layers are parameters of the StackedDAA
             # the visible biases in the dA are parameters of those
             # dA, but not the SdA
+            
             self.params.extend(sigmoid_layer.params)
             
 #            print 'W: ', (sigmoid_layer.W).shape
@@ -182,10 +183,19 @@ class SdA(object):
 #            print 'dA constructed'
         # end-snippet-2
         # We now need to add a logistic layer on top of the MLP
+        if W is not None:
+            W_temp.append(W[len(hidden_layers_sizes)])
+            b_temp.append(W[len(hidden_layers_sizes)])
+        else:
+            W_temp.append(None)
+            b_temp.append(None)
+            
         self.logLayer = LogisticRegression(
             input=self.sigmoid_layers[-1].output,
             n_in=hidden_layers_sizes[-1],
-            n_out=n_outs
+            n_out=n_outs,
+            W = W_temp[len(hidden_layers_sizes)],
+                       b = b_temp[len(hidden_layers_sizes)]
         )
         
         
@@ -285,6 +295,9 @@ class SdA(object):
         index = T.lscalar('index')  # index to a [mini]batch
 
         # compute the gradients with respect to the model parameters
+        print '@@@@@@@@@@@@@@@@'
+        print self.params
+        print '@@@@@@@@@@@@@@@@'
         gparams = T.grad(self.finetune_cost, self.params)
 
         # compute list of fine-tuning updates
