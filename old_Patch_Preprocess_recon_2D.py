@@ -12,13 +12,13 @@ from sklearn.feature_extraction import image
 from random import shuffle
 #from matplotlib import pyplot as plt
 
-def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_root='',out_root='',recon_flag=True):
+def U_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='SdA',in_root='',out_root='',recon_flag=True):
     
     #Initialize user variables
     patch_size = patch_size_x
     patch_pixels = patch_size*patch_size
     pixel_offset = int(patch_size*0.7)
-    padding = patch_size*2
+    padding = patch_size/2
     #threshold = patch_pixels*0.3
     if recon_flag == False:
         recon_num = 4
@@ -43,7 +43,7 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
 #            break
         for file1 in files:
             #print file1
-            if file1[-3:]=='mha' and ( 'Flair' in file1):
+            if file1[-3:]=='mha' and ('Flair' in file1):
                 
                 Flair.append(file1)
                 Folder.append(subdir+'/')
@@ -137,55 +137,14 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
             Truth_patch = Truth_patch.reshape(len(Truth_patch),1)
             #print '3. truth dimension :', Truth_patch.shape
             
-            image_patch = np.vstack([image_patch,slice_patch])
-            image_label = np.vstack([image_label, Truth_patch])
-        num_of_class = []
-        for i in xrange(1,5):
-            num_of_class.append(np.sum((image_label==i).astype(int)))
-        max_num = max(num_of_class)
-        max_num_2 = max(x for x in num_of_class if x!=max_num)
-        
-        Flair_patch = image.extract_patches(Flair_image[:,:,start_slice:stop_slice],[patch_size_x,patch_size_y,1])
-        Flair_patch = Flair_patch.reshape(Flair_patch.shape[0]*Flair_patch.shape[1]*Flair_patch.shape[2], patch_size_x*patch_size_y)
-        T1_patch = image.extract_patches(T1_image[:,:,start_slice:stop_slice],[patch_size_x,patch_size_y,1])
-        T1_patch = T1_patch.reshape(T1_patch.shape[0]*T1_patch.shape[1]*T1_patch.shape[2], patch_size_x*patch_size_y)
-        T2_patch = image.extract_patches(T2_image[:,:,start_slice:stop_slice],[patch_size_x,patch_size_y,1])
-        T2_patch = T2_patch.reshape(T2_patch.shape[0]*T2_patch.shape[1]*T2_patch.shape[2], patch_size_x*patch_size_y)
-        T_1c_patch = image.extract_patches(T_1c_image[:,:,start_slice:stop_slice],[patch_size_x,patch_size_y,1])
-        T_1c_patch = T_1c_patch.reshape(T_1c_patch.shape[0]*T_1c_patch.shape[1]*T_1c_patch.shape[2], patch_size_x*patch_size_y)
-        Truth_patch = image.extract_patches(Truth_image[:,:,start_slice:stop_slice],[patch_size_x,patch_size_y,1])
-        Truth_patch = Truth_patch.reshape(Truth_patch.shape[0]*Truth_patch.shape[1]*Truth_patch.shape[2],patch_size_x, patch_size_y, 1)
-        Truth_patch = Truth_patch[:,(patch_size-1)/2,(patch_size-1)/2]
-        
-        
-        
-        
-        for i in xrange(1,5):
-            #print 'Max : ', max_num_2
-            #print 'Present : ', np.sum(image_label==i).astype(int)
-            diff = max_num_2-np.sum(image_label==i).astype(int)
-            #print 'Diff : ', diff
-            if np.sum(image_label==i).astype(int) >= max_num_2:
-                #print 'Continuing i = ', i
-                continue
-            #print 'TEST : ', Truth_patch.shape
-            index_x,index_y = np.where(Truth_patch==i)
-            #print 'Length : ',len(index_x)
-            index = np.arange(len(index_x))
-            shuffle(index)
-            temp = Truth_patch[index_x[index[0:diff]],:]
-            image_label = np.vstack([image_label,temp])
-            F_p = Flair_patch[index_x[index[0:diff]],:]
-            T1_p = T1_patch[index_x[index[0:diff]],:]
-            T2_p = T2_patch[index_x[index[0:diff]],:]
-            T_1c_p = T_1c_patch[index_x[index[0:diff]],:]
-            temp_patch = np.concatenate([F_p, T1_p, T2_p, T_1c_p], axis=1)
-            image_patch = np.vstack([image_patch, temp_patch])
-            
-            
-        
-            
-#            
+#            image_patch = np.vstack([image_patch,slice_patch])
+#            image_label = np.vstack([image_label, Truth_patch])
+#        num_of_class = []
+#        for i in xrange(5):
+#            num_of_class.append(np.sum((image_label==i).astype(int)))
+#        min_num = min(num_of_class)
+#        min_num_2 = min(x for x in num_of_class if x!=min_num)
+#        for i in xrange(5):
 #            #print 'image patch : ', image_patch.shape
 #            #print 'image_label : ', image_label.shape
 #            index_x,index_y = np.where(image_label==i)
@@ -198,23 +157,15 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
 #            if len(index)>min_num_2:
 #                temp_patch = temp_patch[index[0:min_num_2],:]
 #                temp_label = temp_label[index[0:min_num_2],:]
-        patches = np.vstack([patches,image_patch])
-        ground_truth = np.vstack([ground_truth, image_label])
-        
-        print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
-        print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
-    
-        print
-        print 'No. of 1 : ', np.sum((ground_truth==1).astype(int))
-        print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
-        print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
-        print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
+#            patches = np.vstack([patches,temp_patch])
+#            ground_truth = np.vstack([ground_truth, temp_label])
             
             
             
             
-#        patches = np.vstack([patches,slice_patch])
-#        ground_truth = np.vstack([ground_truth, Truth_patch])
+            
+            patches = np.vstack([patches,slice_patch])
+            ground_truth = np.vstack([ground_truth, Truth_patch])
     print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
     print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
     
@@ -225,26 +176,26 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
     print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
     
     ground_truth = ground_truth.reshape(len(ground_truth))
-    print 'Shape of balanced patches numpy array : ',patches.shape
-    print 'Shape of balanced ground truth : ',ground_truth.shape
+    print 'Shape of Un-balanced patches numpy array : ',patches.shape
+    print 'Shape of Un-balanced ground truth : ',ground_truth.shape
     if recon_flag==False:
         patches = patches[:,0:patch_size*patch_size*4]
     
     if 'training' in out_root and recon_flag == True:
         print'... Saving the 2D training patches'
-        np.save(out_root+'b_trainpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_trainlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'u_trainpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'u_trainlabel_2D_'+prefix+'_.npy',ground_truth)
     elif recon_flag == True:
         print '... Saving the 2D validation patches'
-        np.save(out_root+'b_validpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_validlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'u_validpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'u_validlabel_2D_'+prefix+'_.npy',ground_truth)
     
     if 'training' in out_root and recon_flag == False:
         print'... Saving the 2D training patches'
-        np.save(out_root+'b_trainpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_trainlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'u_trainpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'u_trainlabel_2D_'+prefix+'_.npy',ground_truth)
         
     elif recon_flag == False:
         print '... Saving the 2D validation patches'
-        np.save(out_root+'b_validpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_validlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'u_validpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'u_validlabel_2D_'+prefix+'_.npy',ground_truth)

@@ -41,7 +41,7 @@ Truth = []
 Folder = []
 
 for subdir, dirs, files in os.walk(path):
-#    if len(Flair)>5:
+#    if len(Flair)>3:
 #        break
     for file1 in files:     
             

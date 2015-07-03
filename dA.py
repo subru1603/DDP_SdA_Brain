@@ -220,11 +220,9 @@ class dA(object):
                 correctly as it only support float32 for now.
 
         """
-#        return self.theano_rng.binomial(size=input.shape, n=1,
-#                                        p=1 - corruption_level,
-#                                        dtype=theano.config.floatX) * input
-        
-        return corrupt.gaussian_perturb(input,corruption_level)
+        return self.theano_rng.binomial(size=input.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX) * input
+
+#        return corrupt.gaussian_perturb(input,corruption_level)
 
     def get_hidden_values(self, input):
         """ Computes the values of the hidden layer """
@@ -237,25 +235,26 @@ class dA(object):
         """
         return T.dot(hidden, self.W_prime) + self.b_prime
         
+    
 #    def kl_divergence(self, p, p_hat):
-#        term1 = p * T.log(p)
-#        term2 = p * T.log(p_hat)
-#        term3 = (1-p) * T.log(1 - p)
-#        term4 = (1-p) * T.log(1 - p_hat)
-#        return term1 - term2 + term3 - term4
+#        term1 = p * T.log(p/p_hat)
+#        #term2 = p * T.log(p_hat)
+#        term3 = (1-p) * T.log((1 - p)/(1-p_hat))
+#       # term4 = (1-p) * T.log(1 - p_hat)
+#        return term1  + term3 
 #        
 #    def sparsity_penalty(self, y, sparsity_level=0.005, sparse_reg=1e-3):
 ##        if batch_size == -1 or batch_size == 0:
 ##            raise Exception("Invalid batch_size!")
 #        sparsity_level = T.extra_ops.repeat(sparsity_level, self.n_hidden)
 #        sparsity_penalty = 0
-#        avg_act = y.mean(axis=0)
-#        kl_div = self.kl_divergence(sparsity_level, avg_act)
+#        avg_act = T.mean(y)
+#        kl_div = self.kl_divergence( sparsity_level,avg_act)
 #        sparsity_penalty = sparse_reg * kl_div.sum()
 #        # Implement KL divergence here.
 #        return sparsity_penalty
 
-    def get_cost_updates(self, corruption_level, learning_rate,sparsity_level=0.005,sparsity_reg=1e-3):
+    def get_cost_updates(self, corruption_level, learning_rate, sparsity_level=0.005,sparsity_reg=1e-3):
         """ This function computes the cost and the updates for one trainng
         step of the dA """
 

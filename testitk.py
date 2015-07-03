@@ -10,12 +10,12 @@ import numpy as np
 import os
 
 def convert_mha(path,prefix, patchType = 3):
-    print 'Prefix: ',  prefix
-    print 'Path : ', path
+    #print 'Prefix: ',  prefix
+    #print 'Path : ', path
     outputs = []
     subdirs = []
     for subdir, dirs, files in os.walk(path):
-        print files
+        #print files
         for file1 in files:
             if prefix in file1 and file1[-3:] == 'npy':
                 outputs.append(subdir+'/'+file1)

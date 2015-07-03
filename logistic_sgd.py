@@ -144,6 +144,7 @@ class LogisticRegression(object):
         # LP[n-1,y[n-1]]] and T.mean(LP[T.arange(y.shape[0]),y]) is
         # the mean (across minibatch examples) of the elements in v,
         # i.e., the mean log-likelihood across the minibatch.
+#        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y] + T.mul(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y],z))
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
         # end-snippet-2
 

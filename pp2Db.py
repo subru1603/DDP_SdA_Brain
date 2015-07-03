@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 20 12:28:03 2015
-@author: subru
+Created on Wed Jul  1 17:13:17 2015
+
+@author: bmi
 """
 
-from mha import *
-#from mha2 import *
+import mha
 import numpy as np
 import os
 from sklearn.feature_extraction import image
@@ -19,7 +19,7 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
     patch_pixels = patch_size*patch_size
     pixel_offset = int(patch_size*0.7)
     padding = patch_size*2
-    #threshold = patch_pixels*0.3
+    threshold = patch_pixels*0.3
     if recon_flag == False:
         recon_num = 4
     if recon_flag == True:
@@ -39,24 +39,19 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
     Folder = []
     
     for subdir, dirs, files in os.walk(path):
-#        if len(Flair) is 1:
-#            break
         for file1 in files:
             #print file1
-            if file1[-3:]=='mha' and ( 'Flair' in file1):
-                
+            if file1[-3:]=='mha' and 'Flair' in file1:
                 Flair.append(file1)
                 Folder.append(subdir+'/')
-            elif file1[-3:]=='mha' and ('t1_z' in file1 or 'T1' in file1):
+            elif file1[-3:]=='mha' and 'T1' in file1:
                 T1.append(file1)
-            elif file1[-3:]=='mha' and ('t2' in file1 or 'T2' in file1):
+            elif file1[-3:]=='mha' and 'T2' in file1:
                 T2.append(file1)
-            elif file1[-3:]=='mha' and ('t1c_z' in file1 or 'T_1c' in file1):
+            elif file1[-3:]=='mha' and 'T_1c' in file1:
                 T_1c.append(file1)
             elif file1[-3:]=='mha' and 'OT' in file1:
-                Truth.append(file1)            
-            elif file1[-3:]=='mha' and 'Recon' in file1:
-                Recon.append(file1)
+                Truth.append(file1)
             #elif file1[-3:]=='mha' and 'Recon' in file1:
             #    Recon.append(file1)
                 
@@ -67,13 +62,13 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
     for image_iterator in range(number_of_images):
         print 'Iteration : ',image_iterator+1
         print 'Folder : ', Folder[image_iterator]
-        Flair_image = new(Folder[image_iterator]+Flair[image_iterator])
-        T1_image = new(Folder[image_iterator]+T1[image_iterator])
-        T2_image = new(Folder[image_iterator]+T2[image_iterator])
-        T_1c_image = new(Folder[image_iterator]+T_1c[image_iterator])
+        Flair_image = mha.new(Folder[image_iterator]+Flair[image_iterator])
+        T1_image = mha.new(Folder[image_iterator]+T1[image_iterator])
+        T2_image = mha.new(Folder[image_iterator]+T2[image_iterator])
+        T_1c_image = mha.new(Folder[image_iterator]+T_1c[image_iterator])
         if recon_flag == True:
-            Recon_image = new(Folder[image_iterator]+Recon[image_iterator])
-        Truth_image = new(Folder[image_iterator]+Truth[image_iterator])
+            Recon_image = mha.new(Folder[image_iterator]+Recon[image_iterator])
+        Truth_image = mha.new(Folder[image_iterator]+Truth[image_iterator])
         
         Flair_image = Flair_image.data
         T1_image = T1_image.data
@@ -200,15 +195,13 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
 #                temp_label = temp_label[index[0:min_num_2],:]
         patches = np.vstack([patches,image_patch])
         ground_truth = np.vstack([ground_truth, image_label])
+        for k, item in enumerate(ground_truth):
+            if item != 0:
+                ground_truth[k] = 1
         
         print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
         print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
     
-        print
-        print 'No. of 1 : ', np.sum((ground_truth==1).astype(int))
-        print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
-        print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
-        print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
             
             
             
@@ -218,33 +211,26 @@ def B_Patch_Preprocess_recon_2D(patch_size_x=5,patch_size_y=5,prefix='Sda',in_ro
     print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
     print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
     
-    print
-    print 'No. of 1 : ', np.sum((ground_truth==1).astype(int))
-    print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
-    print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
-    print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
-    
     ground_truth = ground_truth.reshape(len(ground_truth))
-    print 'Shape of balanced patches numpy array : ',patches.shape
-    print 'Shape of balanced ground truth : ',ground_truth.shape
+    
     if recon_flag==False:
         patches = patches[:,0:patch_size*patch_size*4]
     
     if 'training' in out_root and recon_flag == True:
         print'... Saving the 2D training patches'
-        np.save(out_root+'b_trainpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_trainlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_10_trainpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_10_trainlabel_2D_'+prefix+'_.npy',ground_truth)
     elif recon_flag == True:
         print '... Saving the 2D validation patches'
-        np.save(out_root+'b_validpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_validlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_10_validpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_10_validlabel_2D_'+prefix+'_.npy',ground_truth)
     
     if 'training' in out_root and recon_flag == False:
         print'... Saving the 2D training patches'
-        np.save(out_root+'b_trainpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_trainlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_10_trainpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_10_trainlabel_2D_'+prefix+'_.npy',ground_truth)
         
     elif recon_flag == False:
         print '... Saving the 2D validation patches'
-        np.save(out_root+'b_validpatch_2D_'+prefix+'_.npy',patches)
-        np.save(out_root+'b_validlabel_2D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_10_validpatch_2D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_10_validlabel_2D_'+prefix+'_.npy',ground_truth)

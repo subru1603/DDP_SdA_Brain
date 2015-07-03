@@ -233,7 +233,8 @@ class SdA(object):
         # index to a [mini]batch
         index = T.lscalar('index')  # index to a minibatch
         corruption_level = T.scalar('corruption')  # % of corruption to use
-        learning_rate = T.scalar('lr')  # learning rate to use
+        learning_rate = T.scalar('lr')
+        #noise_type = T.scalar('nt')# learning rate to use
         # begining of a batch, given `index`
         batch_begin = index * batch_size
         # ending of a batch given `index`
@@ -296,9 +297,11 @@ class SdA(object):
 
         # compute the gradients with respect to the model parameters
         print '@@@@@@@@@@@@@@@@'
-        print self.params
+#        print self.params
         print '@@@@@@@@@@@@@@@@'
         gparams = T.grad(self.finetune_cost, self.params)
+#        gparams = T.grad(self.finetune_cost, self.params[-2:])
+ #       print (self.params[-2:])
 
         # compute list of fine-tuning updates
         updates = [

@@ -11,13 +11,13 @@ from mha2 import *
 import numpy as np
 import os
 from sklearn.feature_extraction import image
+from random import shuffle
 #from matplotlib import pyplot as plt
 
 #Initialize user variables
 #patch_size = 125
-def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,prefix='SdA',in_root='',out_root='',recon_flag=True):
+def B_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,prefix='SdA',in_root='',out_root='',recon_flag=True):
     
-        
     patch_pixels = patch_size_x*patch_size_y*patch_size_z
     
     pixel_offset_x = int(2*patch_size_x*0.7)
@@ -36,7 +36,6 @@ def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,pre
     
     #paths to images
     path = in_root
-    print path
     
     Flair = []
     T1 = []
@@ -48,12 +47,10 @@ def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,pre
     
     for subdir, dirs, files in os.walk(path):
        # if len(Flair) is 1:
-         #   break
+        #    break
         for file1 in files:     
-                
-            #print file1
+
             if file1[-3:]=='mha' and ('flair' in file1 or 'Flair' in file1):
-                
                 Flair.append(file1)
                 Folder.append(subdir+'/')
             elif file1[-3:]=='mha' and ('t1_z' in file1 or 'T1' in file1):
@@ -68,20 +65,31 @@ def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,pre
                 Recon.append(file1)
                 
     number_of_images = len(Flair)
-    print 'Number of images : ', number_of_images
+    print 'Number of Patients : ', number_of_images
     
-    
+
+#    
+#    
     for image_iterator in range(number_of_images):
         print 'Image number : ',image_iterator+1
         print 'Folder : ', Folder[image_iterator]
+        
         Flair_image = new(Folder[image_iterator]+Flair[image_iterator])
         T1_image = new(Folder[image_iterator]+T1[image_iterator])
         T2_image = new(Folder[image_iterator]+T2[image_iterator])
         T_1c_image = new(Folder[image_iterator]+T_1c[image_iterator])
+#        print 'image created'
+        print Folder[image_iterator] + Truth[image_iterator]
+        Truth_image = new2( Folder[image_iterator] + Truth[image_iterator] )
+#        print 'image created'
+        
+        
+        
+        
         if recon_flag is True:
             Recon_image = new(Folder[image_iterator]+Recon[image_iterator])
-        Truth_image = new2(Folder[image_iterator]+Truth[image_iterator])
         
+       
         Flair_image = Flair_image.data
         T1_image = T1_image.data
         T2_image = T2_image.data
@@ -126,19 +134,80 @@ def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,pre
         Truth_patch = np.array(Truth_patch)
         Truth_patch = Truth_patch.reshape(len(Truth_patch),1)
         #print '3. truth dimension :', Truth_patch.shape
+        num_of_class = []
+        for i in xrange(1,5):
+            num_of_class.append(np.sum((Truth_patch==i).astype(int)))
+        max_num = max(num_of_class)
+        max_num_2 = max(x for x in num_of_class if x!=max_num)
+        
+        Flair_patch = image.extract_patches(Flair_image[x_start:x_stop, y_start:y_stop, z_start:z_stop], [patch_size_x,patch_size_y,patch_size_z])
+        Flair_patch = Flair_patch.reshape(Flair_patch.shape[0]*Flair_patch.shape[1]*Flair_patch.shape[2], patch_size_x*patch_size_y*patch_size_z)
+        
+        T1_patch = image.extract_patches(T1_image[x_start:x_stop, y_start:y_stop, z_start:z_stop],[patch_size_x,patch_size_y,patch_size_z])
+        T1_patch = T1_patch.reshape(T1_patch.shape[0]*T1_patch.shape[1]*T1_patch.shape[2], patch_size_x*patch_size_y*patch_size_z)
+        
+        T2_patch = image.extract_patches(T2_image[x_start:x_stop, y_start:y_stop, z_start:z_stop],[patch_size_x,patch_size_y,patch_size_z])
+        T2_patch = T2_patch.reshape(T2_patch.shape[0]*T2_patch.shape[1]*T2_patch.shape[2], patch_size_x*patch_size_y*patch_size_z)
+        
+        T_1c_patch = image.extract_patches(T_1c_image[x_start:x_stop, y_start:y_stop, z_start:z_stop],[patch_size_x,patch_size_y,patch_size_z])
+        T_1c_patch = T_1c_patch.reshape(T_1c_patch.shape[0]*T_1c_patch.shape[1]*T_1c_patch.shape[2], patch_size_x*patch_size_y*patch_size_z)
+        
+        T_patch = image.extract_patches(Truth_image[x_start:x_stop, y_start:y_stop, z_start:z_stop],[patch_size_x,patch_size_y,patch_size_z])
+        T_patch = T_patch.reshape(T_patch.shape[0]*T_patch.shape[1]*T_patch.shape[2],patch_size_x, patch_size_y, patch_size_z)
+        T_patch = T_patch[:,(patch_size_x-1)/2,(patch_size_y-1)/2,(patch_size_z-1)/2]
+        
+        
+        
+        
+        for i in xrange(1,5):
+            #print 'Max : ', max_num_2
+            #print 'Present : ', np.sum(image_label==i).astype(int)
+            diff = max_num_2-np.sum(T_patch==i).astype(int)
+            #print 'Difference: ', diff
+            #print 'Diff : ', diff
+            if np.sum(T_patch==i).astype(int) >= max_num_2:
+                #print 'Continuing i = ', i
+                continue
+            #print 'TEST : ', Truth_patch.shape
+            if i not in T_patch:
+                continue
+            #print T_patch.shape
+            #print np.sum(T_patch==i).astype(int)
+            index_x = np.where(T_patch==i)
+            #print 'Length : ',len(index_x)
+            index = np.arange(len(index_x))
+            shuffle(index)
+            temp = T_patch[index_x[index[0:diff]]]
+            temp=temp.reshape(len(temp),1)
+            Truth_patch = np.vstack([Truth_patch,temp])
+            
+            #print 'pppp'
+            #print len(index_x[index[0:diff]])
+            #print Flair_patch.shape
+            
+            F_p = Flair_patch[index_x[index[0:diff]],:]
+            T1_p = T1_patch[index_x[index[0:diff]],:]
+            T2_p = T2_patch[index_x[index[0:diff]],:]
+            T_1c_p = T_1c_patch[index_x[index[0:diff]],:]
+            temp_patch = np.concatenate([F_p, T1_p, T2_p, T_1c_p], axis=1)
+            slice_patch = np.vstack([slice_patch, temp_patch])
+            
+        print 'No. of 1 : ', np.sum((Truth_patch==1).astype(int))
+        print 'No. of 2 : ', np.sum((Truth_patch==2).astype(int))
+        print 'No. of 3 : ', np.sum((Truth_patch==3).astype(int))
+        print 'No. of 4 : ', np.sum((Truth_patch==4).astype(int))
             
         patches = np.vstack([patches,slice_patch])
+        
         ground_truth = np.vstack([ground_truth, Truth_patch])
+        print ground_truth.shape
+        print patches.shape
     #
     #
     #print 'Number of non-zeros in ground truth : ', np.sum((ground_truth!=0).astype(int))
     #print 'Number of zeros in ground truth : ', np.sum((ground_truth==0).astype(int))
     #
     #print
-    #print 'No. of 1 : ', np.sum((ground_truth==1).astype(int))
-    #print 'No. of 2 : ', np.sum((ground_truth==2).astype(int))
-    #print 'No. of 3 : ', np.sum((ground_truth==3).astype(int))
-    #print 'No. of 4 : ', np.sum((ground_truth==4).astype(int))
     #
     ground_truth = ground_truth.reshape(len(ground_truth))
     
@@ -151,19 +220,19 @@ def U_Patch_Preprocess_recon_3D(patch_size_x=5,patch_size_y=5,patch_size_z=5,pre
     #print patches.shape
     if 'training' in out_root and recon_flag==True:
         print'... Saving the training patches'
-        np.save(out_root+'u_trainpatch_3D_'+prefix+'_.npy',patches)
-        np.save(out_root+'u_trainlabel_3D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_trainpatch_3D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_trainlabel_3D_'+prefix+'_.npy',ground_truth)
     elif recon_flag==True:
         print '... Saving the test ing patches'
-        np.save(out_root+'u_validpatch_3D_'+prefix+'_.npy',patches)
-        np.save(out_root+'u_validlabel_3D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_validpatch_3D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_validlabel_3D_'+prefix+'_.npy',ground_truth)
         
     if 'training' in out_root and recon_flag==False:
         print'... Saving the training patches'
-        np.save(out_root+'u_trainpatch_3D_'+prefix+'_.npy',patches)
-        np.save(out_root+'u_trainlabel_3D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_trainpatch_3D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_trainlabel_3D_'+prefix+'_.npy',ground_truth)
     elif recon_flag==False:
         print '... Saving the test ing patches'
-        np.save(out_root+'u_validpatch_3D_'+prefix+'_.npy',patches)
-        np.save(out_root+'u_validlabel_3D_'+prefix+'_.npy',ground_truth)
+        np.save(out_root+'b_validpatch_3D_'+prefix+'_.npy',patches)
+        np.save(out_root+'b_validlabel_3D_'+prefix+'_.npy',ground_truth)
         

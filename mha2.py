@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul  2 18:14:47 2015
+
+@author: bmi
+"""
+
 """
 This class reads and writes mha files (images or vector fields)
 Author: Paolo Zaffino  (p.zaffino@unicz.it)
@@ -8,7 +15,7 @@ NOT TESTED ON PYTHON 3
 import numpy as np
 import zlib
 
-class new():
+class new2():
 	
 	"""
 	PUBLIC PARAMETERS:
@@ -102,6 +109,7 @@ class new():
 			## Read raw data
 			self.data=''.join(f.readlines())
 			f.close()
+			self.data = zlib.decompress(self.data)
 			
 			## Raw data from string to array
 			if data_type == 'MET_SHORT':

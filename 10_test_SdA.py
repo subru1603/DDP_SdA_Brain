@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul  1 17:27:45 2015
+
+@author: bmi
+"""
+
 from load_data import *
 from SdA import *
 import getopt
@@ -14,11 +21,11 @@ import os
 
 def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
              pretrain_lr=0.001, training_epochs=1, 
-             b_patch_filename = 'b_Training_patches_norm.npy', b_groundtruth_filename = 'b_Training_labels_norm.npy',
-             b_valid_filename = 'b_Validation_patches_norm.npy', b_validtruth_filename = 'b_Validation_labels_norm.npy',
-             u_patch_filename = 'u_Training_patches_norm.npy', u_groundtruth_filename = 'u_Training_labels_norm.npy',
-             u_valid_filename = 'u_Validation_patches_norm.npy', u_validtruth_filename = 'u_Validation_labels_norm.npy',
-             batch_size=100, n_ins = 605, n_outs = 5, hidden_layers_sizes = [1000,1000,1000],prefix = '11_11_3_G4_', corruption_levels=[0.2,0.2,0.2] ):
+             b_patch_filename = 'b_10_Training_patches_norm.npy', b_groundtruth_filename = 'b_Training_labels_norm.npy',
+             b_valid_filename = 'b_10_Validation_patches_norm.npy', b_validtruth_filename = 'b_Validation_labels_norm.npy',
+             u_patch_filename = 'u_10_Training_patches_norm.npy', u_groundtruth_filename = 'u_Training_labels_norm.npy',
+             u_valid_filename = 'u_10_Validation_patches_norm.npy', u_validtruth_filename = 'u_Validation_labels_norm.npy',
+             batch_size=100, n_ins = 605, n_outs = 2, hidden_layers_sizes = [1000,1000,1000],prefix = '11_11_3_G4_', corruption_levels=[0.2,0.2,0.2] ):
                  
     """
     Demonstrates how to train and test a stochastic denoising autoencoder.
@@ -118,7 +125,6 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
     test_set_x, test_set_y = datasets[2]
-    
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
@@ -228,7 +234,6 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
     valid_set_x, valid_set_y = datasets[1]
     test_set_x, test_set_y = datasets[2]
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
-    
     n_train_batches /= batch_size
     print '... getting the finetuning functions'
     train_fn, validate_model, test_model = sda.build_finetune_functions(datasets=datasets,batch_size=100,learning_rate=0.1)
@@ -306,7 +311,10 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
                     for j in xrange(len(sda.params)):
                         cPickle.dump(sda.params[j].get_value(borrow=True), save_file, protocol = cPickle.HIGHEST_PROTOCOL)
                     save_file.close()
-                    
+                    valid_file = open('log_valid_cost.txt', "a")
+                    for l in log_valid_cost:
+                        valid_file.write("%f\n"%l)
+                    log_valid_cost=[]
                     
                 
                     # test it on the test set
@@ -316,19 +324,15 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
                            'best model %f %%') %
                           (epoch, minibatch_index + 1, n_train_batches,
                            test_score * 100.))
-                    
 
                 else :
                     print 'validation loss not decreasing, hence reducing lr'
                     finetune_lr=0.8*finetune_lr
 
 
-#            if patience <= iter:
-#                done_looping = True
-#                break
-            
-            
-            
+            if patience <= iter:
+                done_looping = True
+                break
 
     end_time = time.clock()
     print(
@@ -342,13 +346,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=1,
     print >> sys.stderr, ('The training code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
-
-    valid_file = open(prefix+'log_valid_error.txt', 'w')
-    valid_file.write('Best validation error: '+str(best_validation_loss*100))
-    valid_file.write('\nBest test error: '+str(test_score*100))
-    valid_file.close()
-    
-    
+                          
     
 #    print sda.params
 #    

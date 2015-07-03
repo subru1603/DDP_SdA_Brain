@@ -2,21 +2,25 @@ import os
 import getopt
 import sys
 
-ANTSPATH = '/usr/local/antsbin/bin/'
-LABELPATH = '/media/UUI/BRATS_Outputs/Patients'
-TRUTHPATH = '/media/UUI/BRATS_Outputs/Patients'
+
+prefix = 'misclass'
+ANTSPATH = '/home/bmi/antsbin/bin/'
+LABELPATH = '/home/bmi/varghese/10_1_brain_mean/testing'
+TRUTHPATH = '/home/bmi/varghese/10_1_brain_mean/testing'
 
 files = os.listdir(LABELPATH)
 LABELPATH, patients, files = os.walk(LABELPATH).next()
-
+#print patients
 for p in patients:
-    print p
+#    print p
     imgs=os.listdir(LABELPATH+'/'+p)
     for i in imgs:
-            if '506070' in i:
+            if prefix in i and  i[-3:]=='mha':
                 classified_path=LABELPATH+'/'+p+'/'+i
-            if 'OT' in i:
+            if 'OT' in i :
                 truth_path=TRUTHPATH+'/'+p+'/'+i
-    print classified_path
-    print truth_path
-    os.system(ANTSPATH+'LabelOverlapMeasures 3 ' +truth_path+' '+classified_path+' 1')
+            
+#    print classified_path
+#    print truth_path
+#    print(ANTSPATH+'LabelOverlapMeasures 3 ' +truth_path+' '+classified_path+' 1')
+    os.system(ANTSPATH+'LabelOverlapMeasures 3 ' +truth_path+' '+classified_path+' ')

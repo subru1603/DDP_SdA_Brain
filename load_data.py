@@ -45,6 +45,8 @@ def load_data(patch_filename, groundtruth_filename, valid_filename, validtruth_f
     train_set_x = np.load(patch_filename)
     train_set_y = np.load(groundtruth_filename)
     
+    length_train_y = train_set_y
+    
     valid_set_x = valid_patch_array[index[0:n_validset]]
     valid_set_y = valid_truth_array[index[0:n_validset]]
     
@@ -100,8 +102,16 @@ def load_data(patch_filename, groundtruth_filename, valid_filename, validtruth_f
     test_set_x, test_set_y = shared_dataset(test_set_x, test_set_y)
     valid_set_x, valid_set_y = shared_dataset(valid_set_x, valid_set_y)
     train_set_x, train_set_y = shared_dataset(train_set_x, train_set_y)
+    
+    label = length_train_y
+    labels = [0]*(len(label))
+    print 'shape: ', label.shape[0]
+    label2 = [i for i in xrange(len(labels)) if label[i]==1 or label[i] ==3]
+    labels = numpy.asarray(labels,dtype=theano.config.floatX)
+    labels[label2] = 1
+    lab = theano.shared(labels,borrow=True)
 
-    rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
+    rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y), T.cast(lab,'int32')]
     return rval
 
 if __name__ == '__main__':
